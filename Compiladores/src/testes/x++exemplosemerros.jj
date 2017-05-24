@@ -1,8 +1,5 @@
 class ClasseTeste
-{
-	
-	//Vamos instanciar variaveis.
-	int a_int = 1; 
+{		int aint = 1; 
   	str a="Hello", b="World";
 	print a+" "+b; //Old habibs die hard.
 	boolean bool = false;

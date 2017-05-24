@@ -1,22 +1,187 @@
 /**
  * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
- */options{  static = true;}PARSER_BEGIN(GrammarTest)
-public class GrammarTest{  public static void main(String args []) throws ParseException  {    GrammarTest parser = new GrammarTest(System.in);    while (true)    {      System.out.println("Reading from standard input...");
-      try      {        switch (GrammarTest.read_Program())        {          case 0 :           System.out.println("OK.");          break;          case 1 :           System.out.println("Goodbye.");          break;          default :           break;        }      }      catch (Exception e)      {        System.out.println("NOK.");        System.out.println(e.getMessage());        GrammarTest.read_Program(System.in);      }      catch (Error e)      {        System.out.println("Oops.");        System.out.println(e.getMessage());        break;      }    }  }}PARSER_END(GrammarTest)SKIP :{  " "| "\r"| "\t"| "\n"}
-
-/************************************************
- * Tokens "terminais" *
- ************************************************/TOKEN : /* OPERATORS */{  < PLUS : "+" >| < MINUS : "-" >| < MULTIPLY : "*" >| < DIVIDE : "/" >}TOKEN :
-{  
-	< IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>)* >
+ */options {
+  STATIC = false;
+  DEBUG_LOOKAHEAD = true;
 }
 
-TOKEN :{  < DIGIT : (< NUMBER >)+ >| < #NUMBER : [ "0"-"9" ] >}
+PARSER_BEGIN(GrammarTest)
+package parser;
 
-TOKEN :
+import java.io.*;
+import recovery.*;   // importa as classes de recuperação de erros do AS
+ 
+
+public class GrammarTest {
+final static String Version = "X++ Compiler - Trab Entrega 3 - 2017";
+int contParseError = 0;           // contador de erros sintáticos
+boolean debug_recovery;   // controla verbose de recuperação de erros
+Token lastError = null;
+
+
+// Define o método "main" da classe GrammarTest.  
+  public  static void main(String args[]) throws ParseException 
+  {
+  boolean debug_as = false;
+  boolean debug_recovery = false;
+
+    String filename = ""; // nome do arquivo a ser analisado
+    GrammarTest parser;     // analisador léxico/sintático
+    int i;
+    boolean ms = false;
+
+    System.out.println(Version);
+    // lê os parâmetros passados para o compilador
+    for (i = 0; i < args.length - 1; i++)
+    {
+        if (args[i].equals("-debug_AS") )
+            debug_as = true;
+        else
+        if (args[i].equals("-debug_recovery") )
+            debug_recovery = true;
+        else
+        {
+            System.out.println("Usage is: java GrammarTest [-debug_AS] " +
+             "[-debug_recovery] inputfile");
+            System.exit(0);
+        }
+    }
+
+    if (args[i].equals("-"))
+    {       // lê da entrada padrão      
+        System.out.println("Reading from standard input . . .");
+        parser = new GrammarTest(System.in); // cria AS
+     }
+     else 
+    {       // lê do arquivo
+        filename = args[args.length-1];  
+        System.out.println("Reading from file " + filename + " . . .");
+        try {  // cria AS
+            parser = new GrammarTest(new java.io.FileInputStream(filename));
+        } 
+    catch (java.io.FileNotFoundException e) {
+               System.out.println("File " + filename + " not found.");
+        return;
+        }
+    } 
+
+    parser.debug_recovery = debug_recovery;
+    if (! debug_as) parser.disable_tracing(); // desab. verbose do AS
+    try {
+        parser.program();   // chama o método que faz a análise
+    }
+    catch (ParseEOFException e)
+    {
+    System.err.println(e.getMessage());
+    }
+    finally {
+        System.out.println(parser.token_source.foundLexError() +
+                                " Lexical Errors found");
+        System.out.println(parser.contParseError + " Syntactic Errors found");
+     }
+
+}  // main
+
+static public String im(int x)
 {
-  <  LETTER: (< CHARACTER >)+ >
-| < #CHARACTER : ["a"-"z","A"-"Z","_"] >  }
+int k;
+String s;
+   s = tokenImage[x];
+   k = s.lastIndexOf("\"");
+   try {s = s.substring(1,k);}
+   catch (StringIndexOutOfBoundsException e)
+   {}
+   return s;
+}
+
+
+boolean eof;    // variável que indica se EOF foi alcançado
+// o método abaixo consome tokens até alcançar um que pertença ao conjunto
+// de sincronização
+
+void consumeUntil(RecoverySet g,
+                 ParseException e,
+                 String met) throws ParseEOFException,
+                                    ParseException
+{
+Token tok;
+
+   if ( debug_recovery) // informação sobre a recuperação
+   {
+       System.out.println();
+       System.out.println("*** " + met + " ***");
+       System.out.println("     Syncronizing Set: " + g);
+   }
+
+   if (g == null) throw e; // se o conjunto é null, propaga a exceção
+
+   tok = getToken(1); // pega token corrente
+   while ( ! eof )  // se não chegou ao fim do arquivo
+   {
+        if ( g.contains(tok.kind ) ) //achou um token no conjunto
+        {
+             if ( debug_recovery)
+               System.out.println("     Found syncronizing token: " + 
+                                   im(tok.kind));
+             break;
+        }
+        if (debug_recovery)
+             System.out.println("     Ignoring token: " + im(tok.kind));
+        getNextToken();     // pega próximo token       
+        tok = getToken(1);
+        if (tok.kind == EOF && ! g.contains(EOF) ) // fim da entrada?   
+            eof = true;
+    }
+   if ( tok != lastError)
+   {
+        System.out.println(e.getMessage());
+        lastError = tok;
+        contParseError++;  // incrementa número de erros
+   }
+   if ( eof ) throw new ParseEOFException("EOF found prematurely.");
+}
+
+}  // GrammarTest
+
+PARSER_END(GrammarTest)
+
+TOKEN_MGR_DECLS :
+{
+int countLexError = 0;
+
+public int foundLexError()
+{
+   return countLexError;
+}
+
+}SKIP :{  " "| "\r"| "\t"| "\n"}
+
+SKIP :
+{
+  "/*" : multilinecomment
+}
+
+SKIP :
+{
+  "//" : singlelinecomment
+}
+
+<multilinecomment> SKIP:
+{
+   "*/" : DEFAULT
+|  <~[]>
+}
+
+<singlelinecomment> SKIP:
+{
+   <["\n","\r"]> : DEFAULT
+|   <~[]>
+}
+
+
+/************************************************
+ * Palavras Reservadas *
+ ************************************************/
 
 TOKEN:
 { 
@@ -25,6 +190,8 @@ TOKEN:
 | < CASE: "case" >
 | < CHAR: "char" >
 | < CLASS: "class" >
+| < CONSTRUCTOR : "constructor">
+| < DEFAULTCASE : "default" >
 | < DO: "do" >
 | < DOUBLE: "double" >
 | < ELSE: "else" >
@@ -36,15 +203,58 @@ TOKEN:
 | < IMPLEMENTS: "implements" >
 | < INT: "int" >
 | < INTERFACE: "interface" >
+| < NEW : "new" >
+| < PRINT : "print" >
+| < READ : "read" >
 | < RETURN: "return" >
 | < SUPER: "super" >
+| < STRING: "string" >
 | < SWITCH: "switch" >
 | < TRUE: "true" >
 | < TRY: "try" >
 | < WHILE: "while" > 
 }
 
-/* SEPARATORS */
+
+/************************************************
+ * OPERATORS *
+ ************************************************/
+TOKEN : {  < PLUS : "+" >| < MINUS : "-" >| < MULTIPLY : "*" >| < DIVIDE : "/" >
+| < QUOCIENT: "%" >
+| < EQUALS : "=" >
+| < NOT : "!" >
+| < LESSTHEN : "<" >
+| < GRTTHEN : " >" >}
+/************************************************
+ * Constantes *
+ ************************************************/
+
+/* constantes */
+
+TOKEN :
+{
+  < int_constant:  // números 
+  	(["0"-"9"] (["0"-"9"])* ) >
+|
+  < string_constant:    // constante string como "abcd bcda"
+    "\""( ~["\"","\n","\r"])* "\"" >
+|
+  < null_constant: "null" > // constante null
+}
+
+
+TOKEN :
+{  
+	< IDENTIFIER: <charac> (<charac>|<numb> | "_")* >
+	| 
+	< #charac: ( ["a"-"z"] | ["A"-"Z"])+ >
+	| 
+	< #numb : ( [ "0"-"9" ] )+ >
+}
+
+/************************************************
+ * SEPARATORS *
+ ************************************************/
 
 TOKEN :
 {
@@ -54,10 +264,22 @@ TOKEN :
 | < RBRACE: "}" >
 | < LBRACKET: "[" >
 | < RBRACKET: "]" >
+| < DOUBLEDOT : ":">
 | < SEMICOLON: ";" >
 | < COMMA: "," >
 | < DOT: "." >
 }
+
+
+/************************************************
+ * Comments *
+ ************************************************/
+//TOKEN :
+//{  
+//  < SINGLELINECOMMENTSTART : "//" >
+//| < MULTILINECOMMENTSTART : "/*" >
+//| < MULTILINECOMMENTEND: "*/" >
+//}
 
 
 /************************************************
@@ -71,33 +293,21 @@ TOKEN :
 void ident() :
 {}
 {
-	 < LETTER > (< LETTER > | < DIGIT > )* 
-}
-  
-
-void digit():
-{}
-{
-  (< DIGIT >)+
-}
-
-void letter():
-{}{
-  (< LETTER >)+
+	 < IDENTIFIER > 
 }
 
 void primitivetype() :
 {}
 {
-  "boolean"
+  < BOOLEAN >
 |
-  "char"
+  < CHAR >
 |
-  "int"
+  < INT >
 |
-  "float"
+  < FLOAT >
 |
-  "double"
+ < DOUBLE >
 }
 
 void classlist() :
@@ -109,62 +319,62 @@ void classlist() :
 void classdecl():
 {}
 {
-  "class" ident() ("extends" ident() )? classbody()
+  < CLASS > ident() (< EXTENDS > ident() )? classbody()
 }
 
 void classbody() :
 {}
 {
-  "{" (classlist())? ( vardecl() ";" )* (constructdecl())* (methoddecl())* "}"
+  < LBRACE > (classlist())? ( vardecl() < SEMICOLON > )* (constructdecl())* (methoddecl())* < RBRACE >
 }
 
 void vardecl() :
 {}
 {
-  ( primitivetype() | ident() ) ident() ( "[" "]" )* ( "," ident() ( "[" "]" )* )*
+  ( primitivetype() | ident() ) ident() ( < LBRACKET > <RBRACKET > )* ( < COMMA > ident() ( < LBRACKET > < RBRACKET > )* )*
 }
 
 void constructdecl() :
 {}
 {
-  "constructor" methodbody()
+  < CONSTRUCTOR > methodbody()
 }
 
 void methoddecl() :
 {}
 {
-  ( primitivetype() | ident() ) ( "[" "]" )* ident() methodbody()
+  ( primitivetype() | ident() ) ( < LBRACKET > < RBRACKET > )* ident() methodbody()
 }
 
 void methodbody() :
 {}
 {
-  "(" paramlist() ")" statement()
+  < LPAREN > paramlist() < RPAREN > statement()
 }
 
 void paramlist() :
 {}
 {
-  ( ( primitivetype() | ident() ) ident() ( "[" "]" )* ( "," ( primitivetype() | ident() ) ident() ( "[" "]" )* )* )?
+  ( ( primitivetype() | ident() ) ident() ( < LBRACKET > < RBRACKET > )* ( < COMMA > ( primitivetype() | ident() ) ident() ( < LBRACKET > < RBRACKET >  )* )* )?
 }
 
 void statement() :
 {}
 {
-     vardecl() ";"
-   | atribStat() ";"
-   | printStat() ";"
-   | readStat() ";"
-   | returnStat() ";"
-   | superStat() ";"
+     vardecl() < SEMICOLON >
+   | atribStat() < SEMICOLON >
+   | printStat() < SEMICOLON >
+   | readStat() < SEMICOLON >
+   | returnStat()< SEMICOLON >
+   | superStat()< SEMICOLON >
    | ifStat()
    | forStat()
    | whileStat()
-   | doWhileStat() ";"
+   | doWhileStat() < SEMICOLON >
    | switchStat()
-   | "{" statlist() "}"
-   | "break" ";"
-   | ";"
+   | < LBRACE > statlist() < RBRACE >
+   | < BREAK >< SEMICOLON >
+   | < SEMICOLON >
 }
 
 void statlist() :
@@ -176,113 +386,113 @@ void statlist() :
 void atribStat() :
 {}
 {
-   lvalue() "=" ( expression() | alocexpression() )
+   lvalue() < EQUALS > ( expression() | alocexpression() )
 }
 
 void printStat() :
 {}
 {
-  "print" expression()
+  < PRINT > expression()
 }
 
 void readStat() :
 {}
 {
-   "read" lvalue()
+   < READ > lvalue()
 }
 
 void returnStat() :
 {}
 {
-  "return" (expression())?
+  < RETURN > (expression())?
 }
 
 void superStat() :
 {}
 {
-  "super" "(" arglist() ")"
+  < SUPER > < LPAREN > arglist() < RPAREN >
 }
 
 void ifStat() :
 {}
 {
-  "if" "(" expression() ")" statement() ( "else" statement() )?
+  < IF > < LPAREN > expression()  < RPAREN > statement() ( < ELSE > statement() )?
 }
 
 void forStat() :
 {}
 {
-  "for" "(" (atribStat())? ";" (expression())? ";" (atribStat())? ")" statement()
+  < FOR > < LPAREN > (atribStat())? < SEMICOLON > (expression())? < SEMICOLON > (atribStat())? < RPAREN > statement()
 }
 
 void arglist() :
 {}
 {
-  ( expression() ( "," expression() )* )?
+  ( expression() ( < COMMA > expression() )* )?
 }
 
 void lvalue() :
 {}
 {
-  ident() ( "[" expression() "]" | "." ident() ( "(" arglist() ")" )? )*
+  ident() ( < LBRACKET > expression() < RBRACKET > | < DOT > ident() ( < LPAREN > arglist() < RPAREN > )? )*
 }
 
 void alocexpression() :
 {}
 {
-  "new" ( ident() "(" arglist() ")" | ( primitivetype() | ident() ) "[" expression() "]" ( "[" expression() "]" )* )
+  < NEW > ( ident() < LPAREN > arglist() < RPAREN > | ( primitivetype() | ident() ) < LBRACKET > expression() < RBRACKET > ( < LBRACKET > expression() < RBRACKET > )* )
 }
 
 void expression() :
 {}
 {
-	numexpr() ( ( "<" | ">" | "<=" | ">=" | "==" | "!=" ) numexpr() )?
+	numexpr() ( ( < LESSTHEN > | < GRTTHEN > | < LESSTHEN >< EQUALS > | < GRTTHEN >< EQUALS > |< EQUALS >< EQUALS > | < NOT >< EQUALS > ) numexpr() )?
 }
 
 void numexpr() :
 {}
 {
-	term() ( ( "+" | "-" ) term() )*
+	term() ( ( < PLUS > | < MINUS > ) term() )*
 }
 
 void term() :
 {}
 {
- 	unaryexpr() ( ( "*" | "/" | "%" ) unaryexpr() )*
+ 	unaryexpr() ( ( < MULTIPLY > | < DIVIDE > | < QUOCIENT > ) unaryexpr() )*
 }
 
 void unaryexpr() :
 {}
 {
-	( "+" | "-" )? factor()
+	( < PLUS > | < MINUS > )? factor()
 }
 
 void factor() :
 {}
 {
-	 "int-constant"
-   | "string-constant"
-   | "null"
+	 < int_constant >
+   | < string_constant > 
+   | < null_constant >
    | lvalue()
-   | "(" expression() ")"
+   | < LPAREN > expression() < RPAREN >
 }
 
 void whileStat() :
 {}
 {
-	"while" "(" expression() ")" statement()
+	< WHILE > < LPAREN > expression() < RPAREN > statement()
 }
 
 void doWhileStat() :
 {}
 {
-	"do" statement() "(" expression() ")"
+	< DO > statement() < LPAREN > expression() < RPAREN >
 }
 
 void switchStat() :
 {}
 {
-	"switch" "(" ident() ")" "{" (switchCasesStat())? "}"
+	< SWITCH > < LPAREN > ident() < RPAREN > < LBRACE > (switchCasesStat())? < LBRACE >
 }
 
 void switchCasesStat() :
@@ -294,39 +504,40 @@ void switchCasesStat() :
 void switchCaseStat() :
 {}
 {
-	( "case" factor() | "default" ) ":" statement()
+	( < CASE > factor() |< DEFAULTCASE > ) < DOUBLEDOT > < DOUBLEDOT > statement()
 }
 
-void lineComment() :
-{}
-{
-	"//" ( < LETTER > | < DIGIT > )*
-}
-
-void blockComment() :
-{}
-{
-	"/*" ( < LETTER > | < DIGIT > )* "*/"
-}
+//void lineComment() :
+//{}
+//{
+//	"//" ( < string_constant > | < int_constant > )*
+//}
+//
+//void blockComment() :
+//{}
+//{
+//	"/*" ( < string_constant > | < int_constant > )* "*/"
+//}
 
 void intLiteral() :
 {}
 {
-	< DIGIT >(<DIGIT >)*
+	< int_constant >(<int_constant >)*
 }
 
 void floatLiteral() :
 {}
 {
-	intLiteral() "." ( intLiteral() | intLiteral() ( "e" | "E" )? ("-")? intLiteral() )?
-           | (intLiteral())? "." ( intLiteral() | intLiteral() ( "e" | "E" )? ("-")? intLiteral() )
+	intLiteral() < DOT > ( intLiteral() | intLiteral() ( "e" | "E" )? (< MINUS >)? intLiteral() )?
+           | (intLiteral())? < DOT > ( intLiteral() | intLiteral() ( "e" | "E" )? (< MINUS >)? intLiteral() )
 }
 
 void stringLiteral() :
 {}
 {
-	""" ( < LETTER > | < DIGIT > )* """
+	"\"" ( < string_constant > | < int_constant > )* "\""
 }
+ 
 
 
   
