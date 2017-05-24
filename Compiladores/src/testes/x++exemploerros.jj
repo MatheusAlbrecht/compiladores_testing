@@ -1,0 +1,58 @@
+class ClasseTeste
+{
+	
+	//Vamos instanciar variaveis.
+	int a_int = 1; 
+  	str a="Hello", b="World";
+	printo a+" "+b; //Old habibs die hard.
+	boolan bool = false;
+	bolean falso = 0;
+	boolean verdadeiro = 1;
+	realeza numerocomvirgula = 1.1; //na verdade eh um ponto
+	real r1, r2; /Instancia 2 reais com uma linha.
+	___real ra[]; //Cria um array.
+
+deve ir para o if (se tudo ta certo)	
+	if (verdadeiro)
+	metodo_if();
+	else
+	metodo_else();
+/*deve ir para o else (se tudo ta certo)*/
+	if (falso)
+	metodo_if();
+	else
+	metodo_else();
+
+/Chama metodo com parametros**/
+	while(a_int < 5)
+/* */	{
+	metodo_loop(a_int);
+	a_int = a_int+1;
+	}
+
+/**For Loop! For honour!/
+	for(int i = 0;i <5; i= i+1)
+	{
+	/*void metodo_loop_for(i)/*
+	}
+	
+    */void metodo_if()/*
+    {
+        print "Eu vim do if!";
+    }
+
+    void metodo_else()
+    {
+        print "Eu vim do else!";
+    }
+
+    void metodo_loop(int iteracao)
+    {
+        print "Eu vim da iteracao "+int2Str(iteracao)+"!";
+    }
+
+    void metodo_loop_for(int iteracao)
+    {
+        print "Eu vim da iteracao "+int2Str(iteracao)+" do for loop!";
+    }
+}

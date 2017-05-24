@@ -1,0 +1,335 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */options{  static = true;}PARSER_BEGIN(GrammarTest)
+public class GrammarTest{  public static void main(String args []) throws ParseException  {    GrammarTest parser = new GrammarTest(System.in);    while (true)    {      System.out.println("Reading from standard input...");
+      try      {        switch (GrammarTest.read_Program())        {          case 0 :           System.out.println("OK.");          break;          case 1 :           System.out.println("Goodbye.");          break;          default :           break;        }      }      catch (Exception e)      {        System.out.println("NOK.");        System.out.println(e.getMessage());        GrammarTest.read_Program(System.in);      }      catch (Error e)      {        System.out.println("Oops.");        System.out.println(e.getMessage());        break;      }    }  }}PARSER_END(GrammarTest)SKIP :{  " "| "\r"| "\t"| "\n"}
+
+/************************************************
+ * Tokens "terminais" *
+ ************************************************/TOKEN : /* OPERATORS */{  < PLUS : "+" >| < MINUS : "-" >| < MULTIPLY : "*" >| < DIVIDE : "/" >}TOKEN :
+{  
+	< IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>)* >
+}
+
+TOKEN :{  < DIGIT : (< NUMBER >)+ >| < #NUMBER : [ "0"-"9" ] >}
+
+TOKEN :
+{
+  <  LETTER: (< CHARACTER >)+ >
+| < #CHARACTER : ["a"-"z","A"-"Z","_"] >  }
+
+TOKEN:
+{ 
+  < BOOLEAN: "boolean" >
+| < BREAK: "break" >
+| < CASE: "case" >
+| < CHAR: "char" >
+| < CLASS: "class" >
+| < DO: "do" >
+| < DOUBLE: "double" >
+| < ELSE: "else" >
+| < EXTENDS: "extends" >
+| < FALSE: "false" >
+| < FLOAT: "float" >
+| < FOR: "for" >
+| < IF: "if" >
+| < IMPLEMENTS: "implements" >
+| < INT: "int" >
+| < INTERFACE: "interface" >
+| < RETURN: "return" >
+| < SUPER: "super" >
+| < SWITCH: "switch" >
+| < TRUE: "true" >
+| < TRY: "try" >
+| < WHILE: "while" > 
+}
+
+/* SEPARATORS */
+
+TOKEN :
+{
+  < LPAREN: "(" >
+| < RPAREN: ")" >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+| < LBRACKET: "[" >
+| < RBRACKET: "]" >
+| < SEMICOLON: ";" >
+| < COMMA: "," >
+| < DOT: "." >
+}
+
+
+/************************************************
+ * Produções *
+ ************************************************/void read_Program() :
+{}
+{
+  (classlist())?
+  <EOF>}
+
+void ident() :
+{}
+{
+	 < LETTER > (< LETTER > | < DIGIT > )* 
+}
+  
+
+void digit():
+{}
+{
+  (< DIGIT >)+
+}
+
+void letter():
+{}{
+  (< LETTER >)+
+}
+
+void primitivetype() :
+{}
+{
+  "boolean"
+|
+  "char"
+|
+  "int"
+|
+  "float"
+|
+  "double"
+}
+
+void classlist() :
+{}
+{ 	classdecl()
+	(classlist())?
+}
+
+void classdecl():
+{}
+{
+  "class" ident() ("extends" ident() )? classbody()
+}
+
+void classbody() :
+{}
+{
+  "{" (classlist())? ( vardecl() ";" )* (constructdecl())* (methoddecl())* "}"
+}
+
+void vardecl() :
+{}
+{
+  ( primitivetype() | ident() ) ident() ( "[" "]" )* ( "," ident() ( "[" "]" )* )*
+}
+
+void constructdecl() :
+{}
+{
+  "constructor" methodbody()
+}
+
+void methoddecl() :
+{}
+{
+  ( primitivetype() | ident() ) ( "[" "]" )* ident() methodbody()
+}
+
+void methodbody() :
+{}
+{
+  "(" paramlist() ")" statement()
+}
+
+void paramlist() :
+{}
+{
+  ( ( primitivetype() | ident() ) ident() ( "[" "]" )* ( "," ( primitivetype() | ident() ) ident() ( "[" "]" )* )* )?
+}
+
+void statement() :
+{}
+{
+     vardecl() ";"
+   | atribStat() ";"
+   | printStat() ";"
+   | readStat() ";"
+   | returnStat() ";"
+   | superStat() ";"
+   | ifStat()
+   | forStat()
+   | whileStat()
+   | doWhileStat() ";"
+   | switchStat()
+   | "{" statlist() "}"
+   | "break" ";"
+   | ";"
+}
+
+void statlist() :
+{}
+{
+  statement() (statlist())?
+}
+
+void atribStat() :
+{}
+{
+   lvalue() "=" ( expression() | alocexpression() )
+}
+
+void printStat() :
+{}
+{
+  "print" expression()
+}
+
+void readStat() :
+{}
+{
+   "read" lvalue()
+}
+
+void returnStat() :
+{}
+{
+  "return" (expression())?
+}
+
+void superStat() :
+{}
+{
+  "super" "(" arglist() ")"
+}
+
+void ifStat() :
+{}
+{
+  "if" "(" expression() ")" statement() ( "else" statement() )?
+}
+
+void forStat() :
+{}
+{
+  "for" "(" (atribStat())? ";" (expression())? ";" (atribStat())? ")" statement()
+}
+
+void arglist() :
+{}
+{
+  ( expression() ( "," expression() )* )?
+}
+
+void lvalue() :
+{}
+{
+  ident() ( "[" expression() "]" | "." ident() ( "(" arglist() ")" )? )*
+}
+
+void alocexpression() :
+{}
+{
+  "new" ( ident() "(" arglist() ")" | ( primitivetype() | ident() ) "[" expression() "]" ( "[" expression() "]" )* )
+}
+
+void expression() :
+{}
+{
+	numexpr() ( ( "<" | ">" | "<=" | ">=" | "==" | "!=" ) numexpr() )?
+}
+
+void numexpr() :
+{}
+{
+	term() ( ( "+" | "-" ) term() )*
+}
+
+void term() :
+{}
+{
+ 	unaryexpr() ( ( "*" | "/" | "%" ) unaryexpr() )*
+}
+
+void unaryexpr() :
+{}
+{
+	( "+" | "-" )? factor()
+}
+
+void factor() :
+{}
+{
+	 "int-constant"
+   | "string-constant"
+   | "null"
+   | lvalue()
+   | "(" expression() ")"
+}
+
+void whileStat() :
+{}
+{
+	"while" "(" expression() ")" statement()
+}
+
+void doWhileStat() :
+{}
+{
+	"do" statement() "(" expression() ")"
+}
+
+void switchStat() :
+{}
+{
+	"switch" "(" ident() ")" "{" (switchCasesStat())? "}"
+}
+
+void switchCasesStat() :
+{}
+{
+	switchCaseStat() (switchCasesStat())?
+}
+
+void switchCaseStat() :
+{}
+{
+	( "case" factor() | "default" ) ":" statement()
+}
+
+void lineComment() :
+{}
+{
+	"//" ( < LETTER > | < DIGIT > )*
+}
+
+void blockComment() :
+{}
+{
+	"/*" ( < LETTER > | < DIGIT > )* "*/"
+}
+
+void intLiteral() :
+{}
+{
+	< DIGIT >(<DIGIT >)*
+}
+
+void floatLiteral() :
+{}
+{
+	intLiteral() "." ( intLiteral() | intLiteral() ( "e" | "E" )? ("-")? intLiteral() )?
+           | (intLiteral())? "." ( intLiteral() | intLiteral() ( "e" | "E" )? ("-")? intLiteral() )
+}
+
+void stringLiteral() :
+{}
+{
+	""" ( < LETTER > | < DIGIT > )* """
+}
+
+
+  
+
+
+
