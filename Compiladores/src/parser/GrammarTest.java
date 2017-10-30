@@ -2,29 +2,29 @@
 package parser;
 
 import java.io.*;
-import recovery.*;   // importa as classes de recuperação de erros do AS
+import recovery.*;   // importa as classes de recuperaï¿½ï¿½o de erros do AS
 
 
 public class GrammarTest implements GrammarTestConstants {
 final static String Version = "X++ Compiler - Trab Entrega 3 - 2017";
-int contParseError = 0;           // contador de erros sintáticos
-boolean debug_recovery;   // controla verbose de recuperação de erros
+int contParseError = 0;           // contador de erros sintï¿½ticos
+boolean debug_recovery;   // controla verbose de recuperaï¿½ï¿½o de erros
 Token lastError = null;
 
-
-// Define o método "main" da classe GrammarTest.  
+//Melhor Diciplina Ever
+// Define o mï¿½todo "main" da classe GrammarTest.
   public  static void main(String args[]) throws ParseException
   {
   boolean debug_as = false;
   boolean debug_recovery = false;
 
     String filename = ""; // nome do arquivo a ser analisado
-    GrammarTest parser;     // analisador léxico/sintático
+    GrammarTest parser;     // analisador lï¿½xico/sintï¿½tico
     int i;
     boolean ms = false;
 
     System.out.println(Version);
-    // lê os parâmetros passados para o compilador
+    // lï¿½ os parï¿½metros passados para o compilador
     for (i = 0; i < args.length - 1; i++)
     {
         if (args[i].equals("-debug_AS") )
@@ -41,12 +41,12 @@ Token lastError = null;
     }
 
     if (args[i].equals("-"))
-    {       // lê da entrada padrão      
+    {       // lï¿½ da entrada padrï¿½o
         System.out.println("Reading from standard input . . .");
         parser = new GrammarTest(System.in); // cria AS
      }
      else
-    {       // lê do arquivo
+    {       // lï¿½ do arquivo
         filename = args[args.length-1];
         System.out.println("Reading from file " + filename + " . . .");
         try {  // cria AS
@@ -61,7 +61,7 @@ Token lastError = null;
     parser.debug_recovery = debug_recovery;
     if (! debug_as) parser.disable_tracing(); // desab. verbose do AS
     try {
-        parser.program();   // chama o método que faz a análise
+        parser.program();   // chama o mï¿½todo que faz a anï¿½lise
     }
     catch (ParseEOFException e)
     {
@@ -88,9 +88,9 @@ String s;
 }
 
 
-boolean eof;    // variável que indica se EOF foi alcançado
-// o método abaixo consome tokens até alcançar um que pertença ao conjunto
-// de sincronização
+boolean eof;    // variï¿½vel que indica se EOF foi alcanï¿½ado
+// o mï¿½todo abaixo consome tokens atï¿½ alcanï¿½ar um que pertenï¿½a ao conjunto
+// de sincronizaï¿½ï¿½o
 
 void consumeUntil(RecoverySet g,
                  ParseException e,
@@ -99,17 +99,17 @@ void consumeUntil(RecoverySet g,
 {
 Token tok;
 
-   if ( debug_recovery) // informação sobre a recuperação
+   if ( debug_recovery) // informaï¿½ï¿½o sobre a recuperaï¿½ï¿½o
    {
        System.out.println();
        System.out.println("*** " + met + " ***");
        System.out.println("     Syncronizing Set: " + g);
    }
 
-   if (g == null) throw e; // se o conjunto é null, propaga a exceção
+   if (g == null) throw e; // se o conjunto ï¿½ null, propaga a exceï¿½ï¿½o
 
    tok = getToken(1); // pega token corrente
-   while ( ! eof )  // se não chegou ao fim do arquivo
+   while ( ! eof )  // se nï¿½o chegou ao fim do arquivo
    {
         if ( g.contains(tok.kind ) ) //achou um token no conjunto
         {
@@ -120,16 +120,16 @@ Token tok;
         }
         if (debug_recovery)
              System.out.println("     Ignoring token: " + im(tok.kind));
-        getNextToken();     // pega próximo token       
+        getNextToken();     // pega prï¿½ximo token
         tok = getToken(1);
-        if (tok.kind == EOF && ! g.contains(EOF) ) // fim da entrada?   
+        if (tok.kind == EOF && ! g.contains(EOF) ) // fim da entrada?
             eof = true;
     }
    if ( tok != lastError)
    {
         System.out.println(e.getMessage());
         lastError = tok;
-        contParseError++;  // incrementa número de erros
+        contParseError++;  // incrementa nï¿½mero de erros
    }
    if ( eof ) throw new ParseEOFException("EOF found prematurely.");
 }
@@ -138,7 +138,7 @@ Token tok;
  * Comments *
  ************************************************/
 //TOKEN :
-//{  
+//{
 //  < SINGLELINECOMMENTSTART : "//" >
 //| < MULTILINECOMMENTSTART : "/*" >
 //| < MULTILINECOMMENTEND: "*/" >
@@ -146,7 +146,7 @@ Token tok;
 
 
 /************************************************
- * Produções *
+ * Produï¿½ï¿½es *
  ************************************************/
   final public void read_Program() throws ParseException {
     trace_call("read_Program");
